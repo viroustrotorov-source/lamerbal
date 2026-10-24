@@ -693,19 +693,19 @@ const CONFIG = {
   tonUsd: 3.2,                  // цена 1 TON в USD
 
   accounts: [
-    { id: 'in', flag: '🇮🇳', name: '🇮🇳 +91',  uah: 30,  usd: 30/41.5 },
-    { id: 'bd', flag: '🇧🇩', name: '🇧🇩 +880', uah: 35,  usd: 35/41.5 },
-    { id: 'ca', flag: '🇨🇦', name: '🇨🇦 +1',   uah: 35,  usd: 35/41.5 },
-    { id: 'us', flag: '🇺🇸', name: '🇺🇸 +1',   uah: 35,  usd: 35/41.5 },
-    { id: 'th', flag: '🇹🇭', name: '🇹🇭 +66',  uah: 50,  usd: 50/41.5 },
-    { id: 'mx', flag: '🇲🇽', name: '🇲🇽 +52',  uah: 50,  usd: 50/41.5 },
-    { id: 'br', flag: '🇧🇷', name: '🇧🇷 +55',  uah: 50,  usd: 50/41.5 },
-    { id: 'ar', flag: '🇦🇷', name: '🇦🇷 +54',  uah: 50,  usd: 50/41.5 },
-    { id: 'uz', flag: '🇺🇿', name: '🇺🇿 +998', uah: 70,  usd: 70/41.5 },
-    { id: 'tr', flag: '🇹🇷', name: '🇹🇷 +90',  uah: 90,  usd: 90/41.5, tag: 'Хит' },
-    { id: 'es', flag: '🇪🇸', name: '🇪🇸 +34',  uah: 90,  usd: 90/41.5 },
-    { id: 'fr', flag: '🇫🇷', name: '🇫🇷 +33',  uah: 100, usd: 100/41.5 },
-    { id: 'ua', flag: '🇺🇦', name: '🇺🇦 +380', uah: 160, usd: 160/41.5, tag: 'Premium' }
+    { id: 'in', flag: '🇮🇳', name: '🇮🇳 +91',   uah: 30,  stars: 65,  usdt: 0.70, rub: 72  },
+    { id: 'bd', flag: '🇧🇩', name: '🇧🇩 +880',  uah: 35,  stars: 75,  usdt: 0.80, rub: 84  },
+    { id: 'ca', flag: '🇨🇦', name: '🇨🇦 +1',    uah: 35,  stars: 75,  usdt: 0.80, rub: 84  },
+    { id: 'us', flag: '🇺🇸', name: '🇺🇸 +1',    uah: 35,  stars: 75,  usdt: 0.80, rub: 84  },
+    { id: 'th', flag: '🇹🇭', name: '🇹🇭 +66',   uah: 50,  stars: 125, usdt: 1.15, rub: 120 },
+    { id: 'mx', flag: '🇲🇽', name: '🇲🇽 +52',   uah: 50,  stars: 125, usdt: 1.15, rub: 120 },
+    { id: 'br', flag: '🇧🇷', name: '🇧🇷 +55',   uah: 50,  stars: 125, usdt: 1.15, rub: 120 },
+    { id: 'ar', flag: '🇦🇷', name: '🇦🇷 +54',   uah: 50,  stars: 125, usdt: 1.15, rub: 120 },
+    { id: 'uz', flag: '🇺🇿', name: '🇺🇿 +998',  uah: 70,  stars: 150, usdt: 1.60, rub: 168 },
+    { id: 'tr', flag: '🇹🇷', name: '🇹🇷 +90',   uah: 90,  stars: 175, usdt: 2.10, rub: 216, tag: 'Хит' },
+    { id: 'es', flag: '🇪🇸', name: '🇪🇸 +34',   uah: 90,  stars: 175, usdt: 2.10, rub: 216 },
+    { id: 'fr', flag: '🇫🇷', name: '🇫🇷 +33',   uah: 100, stars: 250, usdt: 2.25, rub: 240 },
+    { id: 'ua', flag: '🇺🇦', name: '🇺🇦 +380',  uah: 160, stars: 350, usdt: 3.60, rub: 384, tag: 'Premium' }
   ],
   starPacks: [50, 100, 250, 500, 1000, 2500],
   premium: [
@@ -854,14 +854,14 @@ function monthsWord(n){ return n === 3 ? '3 месяца' : n + ' месяцев
 
 function renderLists() {
   $('#accList').innerHTML = CONFIG.accounts.map(a => {
-
-    const price_uah = a.uah !== undefined ? a.uah : (a.usd * CONFIG.rates.uah);
-    const price_usd = a.usd !== undefined ? a.usd : (price_uah / CONFIG.rates.uah);
-    return row({
-      lead: a.flag, title: a.name, sub: 'Telegram-аккаунт, выдача сразу',
-      usd: price_usd, tag: a.tag,
-      key: JSON.stringify({ t:'acc', id:a.id, uah:price_uah })
-    });
+    const price = a[cur] !== undefined ? a[cur] : a.uah;
+    const ci = curInfo(cur);
+    const priceStr = ci.dec ? price.toFixed(ci.dec) : String(Math.ceil(price));
+    const dispPrice = `${Number(priceStr).toLocaleString('ru-RU')} <small>${ci.label}</small>`;
+    return `<button class="row" data-buy='${JSON.stringify({t:'acc',id:a.id})}'>
+      <div class="lead">${a.flag}</div>
+      <div class="txt"><b>${a.name}${a.tag ? `<span class="badge">${a.tag}</span>` : ''}</b><span>Telegram-аккаунт, выдача сразу</span></div>
+      <div class="price">${dispPrice}</div></button>`;
   }).join('');
   $('#starList').innerHTML = CONFIG.starPacks.map(n => row({
     lead: `<img src="${IMG.star}" alt="">`, title: `${n.toLocaleString('ru-RU')} звёзд`, sub: 'Зачисление на аккаунт', usd: n * CONFIG.starUsd,
@@ -886,7 +886,7 @@ bindCustom('#starCustom', '#starCustomBtn', 50, 'stars');
 bindCustom('#tonCustom', '#tonCustomBtn', 1, 'ton');
 
 function describe(o) {
-  if (o.t === 'acc')   { const a = CONFIG.accounts.find(x => x.id === o.id); const price_uah = o.uah || a.uah || (a.usd * CONFIG.rates.uah); return { lead:a.flag, title:`Аккаунт: ${a.name}`, sub:'Выдача сразу после оплаты', usd:price_uah/CONFIG.rates.uah, uah:price_uah, code:`acc_${a.id}` }; }
+  if (o.t === 'acc') { const a = CONFIG.accounts.find(x => x.id === o.id); const price = a[cur] !== undefined ? a[cur] : a.uah; return { lead:a.flag, title:`Аккаунт: ${a.name}`, sub:'Выдача сразу после оплаты', price, usd:a.uah/CONFIG.rates.uah, code:`acc_${a.id}` }; }
   if (o.t === 'stars') return { lead:`<img src="${IMG.star}" alt="">`, title:`${o.n.toLocaleString('ru-RU')} звёзд`, sub:'Telegram Stars', usd:o.n * CONFIG.starUsd, code:`stars_${o.n}` };
   if (o.t === 'prem')  { const p = CONFIG.premium.find(x => x.id === o.id); return { lead:`<img src="${IMG.premium}" alt="">`, title:`Premium, ${monthsWord(p.months)}`, sub:'Telegram Premium', usd:p.usd, code:`prem_${p.months}` }; }
   if (o.t === 'ton')   return { lead:`<img src="${IMG.gem}" alt="">`, title:`${o.n} Ton (GRAM)`, sub:'Toncoin', usd:o.n * CONFIG.tonUsd, code:`ton_${o.n}` };
@@ -902,7 +902,13 @@ function updateSheet() {
   $('#shLead').innerHTML = order.lead;
   $('#shTitle').textContent = order.title;
   $('#shSub').textContent = order.sub;
-  $('#shPrice').innerHTML = fmt(order.usd);
+  if (order.price !== undefined) {
+    const c = curInfo(cur);
+    const v = c.dec ? order.price.toFixed(c.dec) : String(Math.ceil(order.price));
+    $('#shPrice').innerHTML = `${Number(v).toLocaleString('ru-RU')} <small>${c.label}</small>`;
+  } else {
+    $('#shPrice').innerHTML = fmt(order.usd);
+  }
 }
 scrim.addEventListener('click', closeSheet);
 $('#shPay').addEventListener('click', () => {
