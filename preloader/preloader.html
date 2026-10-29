@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#f0f1f1">
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<title>LAMERBAL SHOP</title>
+
+<style>
+:root {
+    --bg: #f0f1f1;
+    --black: #171719;
+    --gray: #85878a;
+    --line: rgba(25, 25, 28, .12);
+
+    --safe-top: calc(env(safe-area-inset-top, 0px) + var(--tg-content-safe-area-inset-top, 0px));
+    --safe-bottom: calc(env(safe-area-inset-bottom, 0px) + var(--tg-content-safe-area-inset-bottom, 0px));
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+    width: 100%; height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--black);
+    font-family: Arial, Helvetica, sans-serif;
+    overscroll-behavior: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none; user-select: none;
+}
+
+.scene {
+    position: relative;
+    width: 100%;
+    height: 100vh;
+    height: var(--tg-viewport-stable-height, 100dvh);
+    min-height: 420px;
+    overflow: hidden;
+    isolation: isolate;
+    background: radial-gradient(ellipse at 50% 45%, #fff 0%, #f6f6f6 38%, #e9eaeb 100%);
+}
+
+.layer { position: absolute; inset: 0; pointer-events: none; }
+#fx { width: 100%; height: 100%; display: block; z-index: 2; }
+
+.grain {
+    inset: -50%; z-index: 9; opacity: .08;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.3'/%3E%3C/svg%3E");
+    animation: grain .2s steps(2) infinite;
+}
+@keyframes grain {
+    0% { transform: translate(0, 0); } 25% { transform: translate(1%, -1%); }
+    50% { transform: translate(-1%, 1%); } 75% { transform: translate(1%, 1%); }
+}
+
+/* ---------- плавающие звёзды и коды (как в первой версии) ---------- */
+.star, .code { position: absolute; color: var(--gray); opacity: 0; user-select: none; }
+.star { font-size: clamp(17px, 3.4vw, 31px); }
+.code { font-size: clamp(12px, 2.2vw, 20px); font-weight: 750; letter-spacing: -.04em; }
+
+.scene.play .star, .scene.play .code {
+    animation: pop .7s var(--delay, 0s) cubic-bezier(.2, 1.4, .4, 1) forwards,
+               floatMove 4s calc(var(--delay, 0s) + .7s) ease-in-out infinite;
+}
+@keyframes pop {
+    from { opacity: 0; transform: translateY(14px) scale(.4) rotate(-40deg); }
+    to   { opacity: .8; transform: none; }
+}
+@keyframes floatMove { 50% { translate: 0 -8px; } }
+
+.floaters { z-index: 1; }
+.s1 { top: 10%; left: 9%;  --delay: 1.5s; } .s2 { top: 8%; left: 55%; --delay: 1.65s; }
+.s3 { top: 16%; right: 9%; --delay: 1.8s; } .s4 { top: 34%; left: 24%; --delay: 1.95s; }
+.s5 { top: 46%; right: 10%; --delay: 2.1s; } .s6 { bottom: 20%; left: 12%; --delay: 1.7s; }
+.s7 { bottom: 12%; right: 22%; --delay: 1.9s; } .s8 { bottom: 27%; right: 12%; --delay: 2.05s; }
+.c1 { top: 15%; left: 29%; --delay: 1.6s; } .c2 { top: 25%; right: 14%; --delay: 1.75s; }
+.c3 { top: 54%; left: 8%;  --delay: 1.9s; } .c4 { bottom: 14%; left: 38%; --delay: 2.1s; }
+.c5 { top: 43%; right: 24%; --delay: 1.85s; }
+
+/* ---------- логотип ---------- */
+.stage {
+    position: absolute;
+    left: 50%;
+    top: calc(47% + (var(--safe-top) - var(--safe-bottom)) / 2);
+    width: min(88vw, 430px);
+    transform: translate(-50%, -50%);
+    z-index: 4;
+}
+.logo-wrap {
+    position: relative;
+    opacity: 0;
+    clip-path: circle(0% at 50% 40%);
+    filter: drop-shadow(0 12px 15px rgba(0, 0, 0, .08));
+}
+.logo-wrap img { display: block; width: 100%; height: auto; }
+
+/* блик, бегущий по логотипу (маска = сам логотип) */
+.sheen {
+    position: absolute; inset: 0;
+    -webkit-mask: url("logo.png") center / contain no-repeat;
+            mask: url("logo.png") center / contain no-repeat;
+    background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.85) 50%, transparent 65%) -150% 0 / 250% 100% no-repeat;
+}
+
+/* появление: «раскрытие» кругом + упругий подскок */
+.scene.hit .logo-wrap { animation: reveal 1s cubic-bezier(.2, .8, .2, 1) forwards, bounce .9s cubic-bezier(.3, 1.6, .5, 1) forwards; }
+@keyframes reveal {
+    0%   { opacity: 1; clip-path: circle(0% at 50% 40%); }
+    100% { opacity: 1; clip-path: circle(90% at 50% 40%); }
+}
+@keyframes bounce {
+    0% { transform: scale(.7) rotate(-6deg); } 100% { transform: scale(1) rotate(0); }
+}
+.scene.hit .sheen { animation: sheen 1.2s .55s ease-in-out forwards; }
+.scene.hit.shine .sheen { animation: sheen 1.2s ease-in-out; }
+@keyframes sheen { to { background-position: 150% 0; } }
+
+/* лёгкое дыхание после появления */
+.scene.idle .logo-wrap { opacity: 1; clip-path: none; animation: breathe 3.2s ease-in-out infinite; }
+@keyframes breathe { 50% { transform: translateY(-5px) scale(1.012); } }
+
+/* вспышка в момент удара */
+.flash {
+    z-index: 8;
+    background: radial-gradient(circle at 50% 47%, #fff 0%, rgba(255,255,255,.7) 30%, transparent 70%);
+    opacity: 0;
+}
+.scene.hit .flash { animation: flash .6s ease-out; }
+@keyframes flash { 0% { opacity: 0; } 12% { opacity: .9; } 100% { opacity: 0; } }
+
+/* ---------- загрузка ---------- */
+.logo-loader {
+    position: absolute;
+    left: 50%;
+    bottom: max(46px, calc(var(--safe-bottom) + 28px));
+    width: min(66vw, 280px);
+    transform: translateX(-50%);
+    z-index: 6;
+    opacity: 0;
+    transition: opacity .5s;
+}
+.scene.hit .logo-loader { opacity: 1; transition-delay: .3s; }
+
+.loader-track { position: relative; height: 3px; background: #d9dadd; border-radius: 10px; }
+.loader-progress {
+    position: relative; width: 0; height: 100%;
+    background: var(--black); border-radius: inherit;
+}
+/* самолётик едет по концу полосы */
+.loader-progress::after {
+    content: ""; position: absolute; right: -9px; top: 50%;
+    width: 18px; height: 14px; transform: translateY(-50%);
+    background: var(--black);
+    clip-path: polygon(100% 50%, 0 0, 28% 50%, 0 100%);
+}
+.loader-info {
+    display: flex; justify-content: space-between;
+    margin-top: 12px;
+    font-size: 9px; font-weight: 700; letter-spacing: .13em; color: var(--gray);
+}
+#logoPercent { color: var(--black); font-variant-numeric: tabular-nums; }
+
+.scene.done .logo-loader { opacity: 0; transition: opacity .35s; }
+.bottom {
+    position: absolute; left: 0; right: 0; z-index: 6;
+    bottom: max(14px, calc(var(--safe-bottom) + 4px));
+    text-align: center; text-transform: uppercase;
+    font-size: 8px; letter-spacing: .18em; color: #a0a1a3; opacity: 0;
+}
+.scene.hit .bottom { animation: fadeIn .7s .8s forwards; }
+@keyframes fadeIn { to { opacity: 1; } }
+
+/* выход */
+.scene.exit .stage { transition: transform .6s ease-in, opacity .6s ease-in; transform: translate(-50%, -50%) scale(1.12); opacity: 0; }
+
+@media (max-width: 480px) { .stage { width: 90vw; } }
+@media (prefers-reduced-motion: reduce) { .grain { animation: none; } }
+</style>
+</head>
+
+<body>
+<main class="scene" id="scene">
+    <div class="layer grain"></div>
+
+    <div class="layer floaters" aria-hidden="true">
+        <span class="star s1">★</span><span class="star s2">★</span><span class="star s3">★</span><span class="star s4">★</span>
+        <span class="star s5">★</span><span class="star s6">★</span><span class="star s7">★</span><span class="star s8">★</span>
+        <span class="code c1">+380</span><span class="code c2">+44</span><span class="code c3">+1</span>
+        <span class="code c4">+880</span><span class="code c5">+222</span>
+    </div>
+
+    <canvas id="fx" class="layer"></canvas>
+
+    <section class="stage" id="stage">
+        <div class="logo-wrap">
+            <img src="logo.png" alt="LAMERBAL SHOP" draggable="false">
+            <div class="sheen"></div>
+        </div>
+    </section>
+
+    <div class="layer flash"></div>
+
+    <div class="bottom">Telegram · Shop</div>
+</main>
+
+<script>
+(() => {
+    const scene = document.getElementById("scene");
+    const stage = document.getElementById("stage");
+    const bar = document.getElementById("logoProgress");
+    const pctEl = document.getElementById("logoPercent");
+    const statusEl = document.getElementById("logoStatus");
+
+    // ===== Настройки =====
+    const NEXT_URL = "../index.html";
+    const FLIGHT_START = 250;
+    const FLIGHT_END = 1500;
+    const DURATION = 3000;
+    const BG = "#f0f1f1";
+
+    // ===== Telegram Mini App =====
+    const tg = window.Telegram && window.Telegram.WebApp;
+    const haptic = fn => { try { tg && tg.HapticFeedback && fn(tg.HapticFeedback); } catch (e) {} };
+    if (tg) {
+        try {
+            tg.ready(); tg.expand();
+            tg.setHeaderColor(BG); tg.setBackgroundColor(BG);
+            if (tg.setBottomBarColor) tg.setBottomBarColor(BG);
+            if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
+        } catch (e) {}
+        const sync = () => {
+            const r = document.documentElement.style, c = tg.contentSafeAreaInset || {};
+            r.setProperty("--tg-content-safe-area-inset-top", (c.top || 0) + "px");
+            r.setProperty("--tg-content-safe-area-inset-bottom", (c.bottom || 0) + "px");
+        };
+        sync();
+        ["contentSafeAreaChanged", "safeAreaChanged", "viewportChanged"].forEach(e => { try { tg.onEvent(e, sync); } catch (_) {} });
+    }
+
+    // ===== Canvas =====
+    const cv = document.getElementById("fx");
+    const ctx = cv.getContext("2d");
+    let W = 0, H = 0;
+    function resize() {
+        const d = Math.min(devicePixelRatio || 1, 2);
+        W = cv.clientWidth; H = cv.clientHeight;
+        cv.width = W * d; cv.height = H * d;
+        ctx.setTransform(d, 0, 0, d, 0, 0);
+    }
+    resize(); addEventListener("resize", resize);
+
+    const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rnd = (a, b) => a + Math.random() * (b - a);
+    const ease = p => p < .5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+    const easeOut = p => 1 - Math.pow(1 - p, 3);
+
+    const dust = Array.from({ length: reduce ? 14 : 42 }, () => ({
+        x: rnd(0, 1), y: rnd(0, 1), r: rnd(.6, 2), v: rnd(.01, .035), ph: rnd(0, 6.28)
+    }));
+
+    const rings = [], bits = [];
+    let target = { x: W / 2, y: H / 2 };
+
+    function center() {
+        const r = stage.getBoundingClientRect(), c = cv.getBoundingClientRect();
+        return { x: r.left + r.width / 2 - c.left, y: r.top + r.height * .4 - c.top };
+    }
+
+    // траектория самолётика: плавная дуга снизу-слева в центр
+    function bez(t, a, b, c) {
+        const u = 1 - t;
+        return { x: u * u * a.x + 2 * u * t * b.x + t * t * c.x, y: u * u * a.y + 2 * u * t * b.y + t * t * c.y };
+    }
+
+    const trail = [];
+    let hit = false, shine = false, planeGone = false;
+    const t0 = performance.now(); let last = t0;
+
+    function drawPlane(x, y, ang, s) {
+        ctx.save(); ctx.translate(x, y); ctx.rotate(ang); ctx.scale(s, s);
+        ctx.fillStyle = "#171719";
+        ctx.beginPath(); ctx.moveTo(18, 0); ctx.lineTo(-13, -10); ctx.lineTo(-6, 0); ctx.lineTo(-13, 10); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = "rgba(255,255,255,.75)"; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(10, -2); ctx.stroke();
+        ctx.restore();
+    }
+
+    function impact() {
+        hit = true;
+        scene.classList.add("hit");
+        haptic(h => h.impactOccurred("heavy"));
+        for (let i = 0; i < 3; i++) rings.push({ x: target.x, y: target.y, born: performance.now() + i * 140, max: Math.max(W, H) * (.45 + i * .12) });
+        for (let i = 0; i < (reduce ? 10 : 36); i++) {
+            const a = rnd(0, 6.28), s = rnd(2, 9);
+            bits.push({ x: target.x, y: target.y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, dec: rnd(.014, .03), r: rnd(1, 3), star: Math.random() < .3 });
+        }
+    }
+
+    function frame(now) {
+        const t = now - t0, dt = Math.min(48, now - last); last = now;
+        ctx.clearRect(0, 0, W, H);
+        target = center();
+
+        // пыль
+        for (const d of dust) {
+            d.y -= d.v * dt / 1000; if (d.y < -.05) { d.y = 1.05; d.x = Math.random(); }
+            const a = .1 + .12 * (.5 + .5 * Math.sin(t / 700 + d.ph));
+            ctx.fillStyle = `rgba(40,40,46,${a})`;
+            ctx.beginPath(); ctx.arc(d.x * W, d.y * H, d.r, 0, 6.28); ctx.fill();
+        }
+
+        // самолётик + шлейф
+        if (t >= FLIGHT_START && !planeGone) {
+            const p = Math.min(1, (t - FLIGHT_START) / (FLIGHT_END - FLIGHT_START));
+            const e = ease(p) * .6 + p * .4;
+            const A = { x: -30, y: H * .88 }, B = { x: W * .15, y: H * .18 }, C = target;
+            const pos = bez(e, A, B, C), nxt = bez(Math.min(1, e + .01), A, B, C);
+            const ang = Math.atan2(nxt.y - pos.y, nxt.x - pos.x);
+            trail.push({ x: pos.x, y: pos.y, born: now });
+
+            // пунктирный шлейф, исчезающий со временем
+            ctx.lineCap = "round";
+            for (let i = 1; i < trail.length; i++) {
+                const age = (now - trail[i].born) / 900, al = Math.max(0, 1 - age);
+                if (al <= 0 || i % 3 === 0) continue;
+                ctx.strokeStyle = `rgba(23,23,25,${al * .55})`;
+                ctx.lineWidth = 1.4 * al + .4;
+                ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke();
+            }
+            const sc = 1 + (1 - p) * .2 - p * .35;
+            drawPlane(pos.x, pos.y, ang, Math.max(.3, sc));
+
+            if (p >= 1) { planeGone = true; if (!hit) impact(); }
+        } else if (planeGone) {
+            for (let i = 1; i < trail.length; i++) {
+                const al = Math.max(0, 1 - (now - trail[i].born) / 900);
+                if (al <= 0) continue;
+                ctx.strokeStyle = `rgba(23,23,25,${al * .5})`; ctx.lineWidth = 1.4 * al + .3;
+                ctx.beginPath(); ctx.moveTo(trail[i - 1].x, trail[i - 1].y); ctx.lineTo(trail[i].x, trail[i].y); ctx.stroke();
+            }
+        }
+
+        // ударные волны
+        for (let i = rings.length - 1; i >= 0; i--) {
+            const r = rings[i], p = (now - r.born) / 1300;
+            if (p < 0) continue;
+            if (p >= 1) { rings.splice(i, 1); continue; }
+            ctx.strokeStyle = `rgba(23,23,25,${(1 - p) * .35})`;
+            ctx.lineWidth = 2 * (1 - p) + .5;
+            ctx.beginPath(); ctx.arc(r.x, r.y, r.max * easeOut(p), 0, 6.28); ctx.stroke();
+        }
+
+        // осколки/звёздочки
+        for (let i = bits.length - 1; i >= 0; i--) {
+            const b = bits[i];
+            b.x += b.vx; b.y += b.vy; b.vx *= .95; b.vy = b.vy * .95 + .08; b.life -= b.dec;
+            if (b.life <= 0) { bits.splice(i, 1); continue; }
+            ctx.fillStyle = `rgba(23,23,25,${b.life * .7})`;
+            if (b.star) { ctx.font = `${8 + b.r * 4}px Arial`; ctx.fillText("★", b.x, b.y); }
+            else { ctx.beginPath(); ctx.arc(b.x, b.y, b.r * b.life + .4, 0, 6.28); ctx.fill(); }
+        }
+
+        requestAnimationFrame(frame);
+    }
+
+    // ===== Старт =====
+    scene.classList.add("play");
+    requestAnimationFrame(frame);
+    if (reduce) setTimeout(() => { if (!hit) { planeGone = true; impact(); } }, 100);
+
+    setTimeout(() => { scene.classList.add("idle"); }, FLIGHT_END + 600);
+
+    // Предзагрузка index.html в фоне
+    var preloaded = false;
+    var link = document.createElement('link');
+    link.rel = 'prefetch'; link.href = NEXT_URL;
+    document.head.appendChild(link);
+
+    // Редирект через 3900 мс — полная анимация
+    setTimeout(function() {
+        scene.classList.add("done");
+        haptic(h => h.notificationOccurred("success"));
+        rings.push({ x: target.x, y: target.y, born: performance.now(), max: Math.max(W, H) * .6 });
+        if (NEXT_URL) {
+            setTimeout(function() { scene.classList.add("exit"); }, 400);
+            setTimeout(function() { location.replace(NEXT_URL); }, 700);
+        }
+    }, 3900);
+})();
+</script>
+</body>
+</html>
