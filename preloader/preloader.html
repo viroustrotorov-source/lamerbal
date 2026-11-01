@@ -220,6 +220,10 @@ html, body {
     const FLIGHT_END = 1500;
     const DURATION = 3000;
     const BG = "#f0f1f1";
+    
+    // Preserve hash from URL
+    const hash = window.location.hash;
+    const nextUrl = hash ? NEXT_URL + hash : NEXT_URL;
 
     // ===== Telegram Mini App =====
     const tg = window.Telegram && window.Telegram.WebApp;
@@ -366,27 +370,24 @@ html, body {
         requestAnimationFrame(frame);
     }
 
-    // ===== Старт =====
     scene.classList.add("play");
     requestAnimationFrame(frame);
     if (reduce) setTimeout(() => { if (!hit) { planeGone = true; impact(); } }, 100);
 
     setTimeout(() => { scene.classList.add("idle"); }, FLIGHT_END + 600);
 
-    // Предзагрузка index.html в фоне
     var preloaded = false;
     var link = document.createElement('link');
     link.rel = 'prefetch'; link.href = NEXT_URL;
     document.head.appendChild(link);
 
-    // Редирект через 3900 мс — полная анимация
     setTimeout(function() {
         scene.classList.add("done");
         haptic(h => h.notificationOccurred("success"));
         rings.push({ x: target.x, y: target.y, born: performance.now(), max: Math.max(W, H) * .6 });
         if (NEXT_URL) {
             setTimeout(function() { scene.classList.add("exit"); }, 400);
-            setTimeout(function() { location.replace(NEXT_URL); }, 700);
+            setTimeout(function() { location.replace(nextUrl); }, 700);
         }
     }, 3900);
 })();
