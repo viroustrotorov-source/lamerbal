@@ -370,20 +370,17 @@ html, body {
         requestAnimationFrame(frame);
     }
 
-    // ===== Старт =====
     scene.classList.add("play");
     requestAnimationFrame(frame);
     if (reduce) setTimeout(() => { if (!hit) { planeGone = true; impact(); } }, 100);
 
-    setTimeout(() => { scene.classList.add("idle"); }, FLIGHT_END + 600);
-
-    // Предзагрузка index.html в фоне
+    setTimeout(() => { scene.classList.add("idle"); }, FLIGHT_END + 600
+               
     var preloaded = false;
     var link = document.createElement('link');
     link.rel = 'prefetch'; link.href = NEXT_URL;
     document.head.appendChild(link);
 
-    // Редирект через 3900 мс — полная анимация
     setTimeout(function() {
         scene.classList.add("done");
         haptic(h => h.notificationOccurred("success"));
